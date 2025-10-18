@@ -1,14 +1,17 @@
 var express = require('express');
-var cors = require('cors'); //fetch対策
+var cors = require('cors'); //fetch
 var db = require('./db');
 const mysql = require('mysql2');
+const path = require('path');
 
 
 var app = express();
 app.use(express.json()); 
 app.use(cors());
+app.use(express.static(path.join(__dirname, 'public')));
 
-
+app.set('view engine', 'pug');
+app.set('views', './views');
 
 db.connect(err => {
   if (err) {
@@ -18,8 +21,14 @@ db.connect(err => {
   console.log('MySQL接続成功');
 });
 
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'html', 'ec2_practice.html'));
+});  
 
 
+
+
+//homepage用のAPI
 app.get('/api/allitems', (req, res) => {
   const sql = 'SELECT item_id, item_name, item_price, item_category ,item_stock FROM shop_db.items';
 

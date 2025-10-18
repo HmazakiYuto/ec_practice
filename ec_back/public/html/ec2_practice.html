@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/stylesheets/style.css">
+  <title>ネットスーパー(仮)</title>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">ネットスーパー（仮）</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="productsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            商品カテゴリー
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="productsDropdown">
+            <li><a class="dropdown-item category-filter" href="#" data-category="all">すべて</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item category-filter" href="#" data-category="野菜">野菜</a></li>
+            <li><a class="dropdown-item category-filter" href="#" data-category="果物">果物</a></li>
+            <li><a class="dropdown-item category-filter" href="#" data-category="肉">肉</a></li>
+            <li><a class="dropdown-item category-filter" href="#" data-category="魚">魚</a></li>
+            <li><a class="dropdown-item category-filter" href="#" data-category="飲料">飲料</a></li>
+            <li><a class="dropdown-item category-filter" href="#" data-category="お菓子">お菓子</a></li>
+            <li><a class="dropdown-item category-filter" href="#" data-category="王">王</a></li>
+          </ul>
+        </li>
+        <li class="nav-item"><a class="nav-link" href="./cart.html">カート</a></li>
+        <li class="nav-item"><a class="nav-link" href="./login.html">ログイン</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+<div class="container mt-5 pt-4">
+  <h2 id="category-title">商品一覧</h2>
+  <div id="items-container" class="item-list"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let allItems = [];
+let currentCategory = 'all';
+
+const categoryNames = {
+  'all': 'すべての商品',
+  '野菜': '野菜',
+  '果物': '果物',
+  '肉': '肉',
+  '魚': '魚',
+  '飲料': '飲料',
+  'お菓子': 'お菓子',
+  '王': '王'
+};
+
+// データ取得
+async function getData() {
+  try {
+    const res = await fetch('http://localhost:3001/api/allitems');
+    allItems = await res.json();
+    displayItems(currentCategory);
+  } catch (err) {
+    console.error('通信エラー:', err);
+  }
+}
+
+// アイテム表示
+function displayItems(category) {
+  const container = document.getElementById('items-container');
+  const titleElement = document.getElementById('category-title');
+  container.innerHTML = '';
+
+  const filteredItems = category === 'all'
+    ? allItems
+    : allItems.filter(item => item.item_category === category);
+
+  titleElement.textContent = categoryNames[category] || '商品一覧';
+
+  if (filteredItems.length === 0) {
+    container.innerHTML = '<p class="text-muted">該当する商品がありません。</p>';
+    return;
+  }
+
+  filteredItems.forEach(item => {
+    const imageUrl = `images/item_${item.item_id}.png`;
+
+    
+    localStorage.setItem('item_' + item.item_id, JSON.stringify(item));
+
+    
+    const itemHTML = document.createElement('div');
+    itemHTML.className = 'item-card mb-3 p-2 border rounded';
+    itemHTML.innerHTML = `
+      <img src="${imageUrl}" alt="${item.item_name}" class="item-image mb-2" style="width:100px;">
+      <div><strong>${item.item_name}</strong></div>
+      <div>¥${item.item_price}</div>
+      <div>在庫: ${item.item_stock}</div>
+      <button class="btn btn-sm btn-primary add-to-cart" data-id="${item.item_id}">カートに追加</button>
+    `;
+
+    container.appendChild(itemHTML);
+
+    
+    const button = itemHTML.querySelector('.add-to-cart');
+    button.addEventListener('click', () => {
+      const cartKey = 'cart_' + item.item_id;
+      let count = parseInt(localStorage.getItem(cartKey)) || 0;
+
+      if (item.item_stock <= 0) {
+        alert('在庫がありません');
+        return;
+      }
+
+      if (count + 1 > item.item_stock) {
+        alert('これ以上追加できません');
+        return;
+      }
+
+      count += 1;
+      localStorage.setItem(cartKey, count);
+      alert('カートに追加しました');
+    });
+  });
+}
+
+// カテゴリーフィルター
+document.addEventListener('DOMContentLoaded', () => {
+  const categoryFilters = document.querySelectorAll('.category-filter');
+  categoryFilters.forEach(filter => {
+    filter.addEventListener('click', e => {
+      e.preventDefault();
+      currentCategory = e.target.dataset.category;
+      displayItems(currentCategory);
+    });
+  });
+
+  getData();
+});
+</script>
+</body>
+</html>
