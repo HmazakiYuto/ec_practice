@@ -31,8 +31,8 @@
             <li><a class="dropdown-item category-filter" href="#" data-category="王">王</a></li>
           </ul>
         </li>
-        <li class="nav-item"><a class="nav-link" href="./cart.html">カート</a></li>
-        <li class="nav-item"><a class="nav-link" href="./login.html">ログイン</a></li>
+        <li class="nav-item"><a class="nav-link" href="/html/cart.html">カート</a></li>
+        <li class="nav-item"><a class="nav-link" href="/html/login.html">ログイン</a></li>
       </ul>
     </div>
   </div>
@@ -89,7 +89,7 @@ function displayItems(category) {
   }
 
   filteredItems.forEach(item => {
-    const imageUrl = `images/item_${item.item_id}.png`;
+    const imageUrl = `/images/item_${item.item_id}.png`;
 
     
     localStorage.setItem('item_' + item.item_id, JSON.stringify(item));
@@ -102,9 +102,12 @@ function displayItems(category) {
       <div><strong>${item.item_name}</strong></div>
       <div>¥${item.item_price}</div>
       <div>在庫: ${item.item_stock}</div>
-      <button class="btn btn-sm btn-primary add-to-cart" data-id="${item.item_id}">カートに追加</button>
     `;
-
+    if(item.item_stock > 0 ) {
+      itemHTML.innerHTML += `<button class="btn btn-primary btn-sm mt-2 add-to-cart">カートに追加</button>`;
+    } else {
+      itemHTML.innerHTML += `<button class="btn btn-secondary btn-sm mt-2" disabled>sold out</button>`;
+    }
     container.appendChild(itemHTML);
 
     

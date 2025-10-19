@@ -1,26 +1,105 @@
 <!doctype html>
 <html lang="ja">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>ログインページ</title>
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
-            background: #f7f7f7;
-            color: #333;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ログインページ</title>
+  <style>
+    table { margin-bottom: 20px; }
+    th { text-align: left; padding-right: 10px; }
+    input { padding: 4px; }
+    .btn { padding: 6px 12px; cursor: pointer; }
+  </style>
 </head>
 <body>
-    <div><a href="./ec2_practice.html" class="return_home btn btn-link mt-3 ms-3">ホームに戻る</a></div>
-    <main>
-        <h1>作成中</h1>
-    </main>
+
+  <div>
+    <a href="./ec2_practice.html" class="return_home btn btn-link mt-3 ms-3">ホームに戻る</a>
+  </div>
+
+  <div>
+    <h2>ログイン</h2>
+    <table>
+      <tbody>
+        <tr>
+          <th>ユーザ名</th>
+          <td><input name="login_user_name" id="login_user_name" type="text" maxlength="10"></td>
+        </tr>
+        <tr>
+          <th>パスワード</th>
+          <td><input name="login_password" id="login_password" type="password" maxlength="10"></td>
+        </tr>
+      </tbody>
+    </table>
+    <button type="button" onclick="loginuser()">ログイン</button>
+
+    <h2>ユーザー登録</h2>
+    <table>
+      <tbody>
+        <tr>
+          <th>ユーザー名</th>
+          <td><input name="entry_user_name" id="entry_user_name" type="text" maxlength="10" placeholder="6〜10文字"></td>
+        </tr>
+        <tr>
+          <th>パスワード</th>
+          <td><input name="entry_passward" id="entry_passward" type="password" maxlength="10" placeholder="6〜10文字"></td>
+        </tr>
+      </tbody>
+    </table>
+    <button type="button" onclick="registerUser()">登録</button>
+  </div>
+
+  <script>
+    // --- 値を保持する ---
+    const fields = ['login_user_name', 'login_password', 'entry_user_name', 'entry_passward'];
+    window.addEventListener('DOMContentLoaded', () => {
+      fields.forEach(id => {
+        const value = localStorage.getItem(id);
+        if (value) document.getElementById(id).value = value;
+      });
+    });
+    fields.forEach(id => {
+      document.getElementById(id).addEventListener('input', e => {
+        localStorage.setItem(id, e.target.value);
+      });
+    });
+
+    // --- 文字数チェック関数 ---
+    function checkLength(input, min, max) {
+      if (input.value.length < min) {
+        alert(`${input.name} は ${min}文字以上で入力してください`);
+        return false;
+      }
+      if (input.value.length > max) {
+        input.value = input.value.slice(0, max); // 超過分はカット
+      }
+      return true;
+    }
+
+    // --- ログイン処理 ---
+    function loginuser() {
+      const userName = document.getElementById('login_user_name');
+      const password = document.getElementById('login_password');
+
+      if (!checkLength(userName, 1, 10)) return;
+      if (!checkLength(password, 1, 10)) return;
+
+      alert(`ログイン処理: ${userName.value}`);
+      // ここでサーバに送信する処理を追加
+    }
+
+    // --- 登録処理 ---
+    function registerUser() {
+      const userName = document.getElementById('entry_user_name');
+      const password = document.getElementById('entry_passward');
+
+      if (!checkLength(userName, 6, 10)) return;
+      if (!checkLength(password, 6, 10)) return;
+
+      alert(`登録処理: ${userName.value}`);
+      // ここでサーバに送信する処理を追加
+    }
+  </script>
+
 </body>
 </html>
