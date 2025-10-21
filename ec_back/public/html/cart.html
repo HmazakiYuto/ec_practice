@@ -6,99 +6,171 @@
   <title>カート</title>
 </head>
 <body>
-    <div><a href="./ec2_practice.html" class="return_home btn btn-link mt-3 ms-3">ホームに戻る</a></div>
-<div class="container mt-5">
-  <h2>カート</h2>
-  <div id="cart-items"></div>
-  <hr>
-  <div id="cart-total" class="fs-5 fw-bold"></div>
-</div>
+  <div>
+    <a href="/html/ec2_practice.html" class="return_home btn btn-link mt-3 ms-3">ホームに戻る</a>
+  </div>
 
-<script>
-function loadCart() {
-  const cartContainer = document.getElementById('cart-items');
-  cartContainer.innerHTML = '';
-  let total = 0;
+  <div class="container mt-5">
+    <h2>カート</h2>
+    <div id="cart-items"></div>
+    <hr>
+    <div id="cart-total" class="fs-5 fw-bold mb-3"></div>
 
-  // LocalStorage から cart_ で始まるアイテムを取得
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!key.startsWith('cart_')) continue;
+    <!-- 購入ボタン -->
+    <button id="purchase-btn" class="btn btn-success w-100">購入する</button>
+  </div>
 
-    const itemId = key.replace('cart_', '');
-    const quantity = parseInt(localStorage.getItem(key));
-    const item = JSON.parse(localStorage.getItem('item_' + itemId));
+  <script>
+  // --- カート表示 ---
+  function loadCart() {
+    const cartContainer = document.getElementById('cart-items');
+    cartContainer.innerHTML = '';
+    let total = 0;
 
-    if (!item || quantity === 0) continue;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key.startsWith('cart_')) continue;
 
-    const subtotal = quantity * item.item_price;
-    total += subtotal;
+      const itemId = key.replace('cart_', '');
+      const quantity = parseInt(localStorage.getItem(key));
+      const item = JSON.parse(localStorage.getItem('item_' + itemId));
 
-    const itemCard = document.createElement('div');
-    itemCard.className = 'card mb-2 p-2';
-    itemCard.innerHTML = `
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <strong>${item.item_name}</strong><br>
-          価格: ¥${item.item_price} × ${quantity} = ¥${subtotal}<br>
-          在庫: ${item.item_stock}
+      if (!item || quantity === 0) continue;
+
+      const subtotal = quantity * item.item_price;
+      total += subtotal;
+
+      const itemCard = document.createElement('div');
+      itemCard.className = 'card mb-2 p-2';
+      itemCard.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <strong>${item.item_name}</strong><br>
+            価格: ¥${item.item_price} × ${quantity} = ¥${subtotal}<br>
+            在庫: ${item.item_stock}
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-secondary decrease-btn" data-id="${itemId}">−</button>
+            <button class="btn btn-sm btn-secondary increase-btn" data-id="${itemId}">＋</button>
+            <button class="btn btn-sm btn-danger remove-btn" data-id="${itemId}">削除</button>
+          </div>
         </div>
-        <div class="btn-group">
-          <button class="btn btn-sm btn-secondary decrease-btn" data-id="${itemId}">−</button>
-          <button class="btn btn-sm btn-secondary increase-btn" data-id="${itemId}">＋</button>
-          <button class="btn btn-sm btn-danger remove-btn" data-id="${itemId}">削除</button>
-        </div>
-      </div>
-    `;
-    cartContainer.appendChild(itemCard);
+      `;
+      cartContainer.appendChild(itemCard);
+    }
+
+    document.getElementById('cart-total').textContent = `合計: ¥${total}`;
+
+    // ボタンイベント
+    document.querySelectorAll('.increase-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const cartKey = 'cart_' + id;
+        const item = JSON.parse(localStorage.getItem('item_' + id));
+        let quantity = parseInt(localStorage.getItem(cartKey)) || 0;
+
+        if (quantity + 1 > item.item_stock) {
+          alert('これ以上追加できません');
+          return;
+        }
+        quantity += 1;
+        localStorage.setItem(cartKey, quantity);
+        loadCart();
+      });
+    });
+
+    document.querySelectorAll('.decrease-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        const cartKey = 'cart_' + id;
+        let quantity = parseInt(localStorage.getItem(cartKey)) || 0;
+        if (quantity <= 1) {
+          localStorage.removeItem(cartKey);
+        } else {
+          quantity -= 1;
+          localStorage.setItem(cartKey, quantity);
+        }
+        loadCart();
+      });
+    });
+
+    document.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        localStorage.removeItem('cart_' + id);
+        loadCart();
+      });
+    });
   }
 
-  document.getElementById('cart-total').textContent = `合計: ¥${total}`;
+  // --- 購入処理 ---
+  async function purchaseItems() {
+    const token = localStorage.getItem('token');
+    const user_id = localStorage.getItem('user_id');
+    if (!token) {
+      alert('ログインが必要です');
+      window.location.href = '/html/login.html';
+      return;
+    }
 
-  // ボタンイベント登録
-  document.querySelectorAll('.increase-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      const cartKey = 'cart_' + id;
-      const item = JSON.parse(localStorage.getItem('item_' + id));
-      let quantity = parseInt(localStorage.getItem(cartKey)) || 0;
+    const items = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key.startsWith('cart_')) continue;
 
-      if (quantity + 1 > item.item_stock) {
-        alert('これ以上追加できません');
+      const itemId = key.replace('cart_', '');
+      const quantity = parseInt(localStorage.getItem(key));
+      if (quantity > 0) {
+        const itemData = JSON.parse(localStorage.getItem('item_' + itemId));
+        items.push({
+          item_id: parseInt(itemId),
+          quantity: quantity,
+          price: itemData.item_price
+        });
+      }
+    }
+
+    if (items.length === 0) {
+      alert('カートが空です');
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:3001/api/purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ user_id, items })
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        alert('購入に失敗しました: ' + (errorData.message || res.statusText));
         return;
       }
-      quantity += 1;
-      localStorage.setItem(cartKey, quantity);
-      loadCart();
-    });
-  });
 
-  document.querySelectorAll('.decrease-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      const cartKey = 'cart_' + id;
-      let quantity = parseInt(localStorage.getItem(cartKey)) || 0;
-      if (quantity <= 1) {
-        // 1以下なら削除
-        localStorage.removeItem(cartKey);
-      } else {
-        quantity -= 1;
-        localStorage.setItem(cartKey, quantity);
-      }
-      loadCart();
-    });
-  });
+      await res.json();
+      alert('購入が完了しました！');
 
-  document.querySelectorAll('.remove-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = btn.dataset.id;
-      localStorage.removeItem('cart_' + id);
-      loadCart();
-    });
-  });
-}
+      // カートクリア
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('cart_'))
+        .forEach(k => localStorage.removeItem(k));
 
-document.addEventListener('DOMContentLoaded', loadCart);
-</script>
+      loadCart();
+
+    } catch (err) {
+      console.error('通信エラー:', err);
+      alert('通信エラーが発生しました');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadCart();
+    document.getElementById('purchase-btn').addEventListener('click', purchaseItems);
+  });
+  </script>
 </body>
 </html>

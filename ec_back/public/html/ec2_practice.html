@@ -60,7 +60,24 @@ const categoryNames = {
   '王': '王'
 };
 
-// データ取得
+//  ログイン状態の確認関数
+function updateLoginMenu() {
+  const loginLink = document.querySelector('.nav-link[href="/html/login.html"]');
+  const token = localStorage.getItem('token');
+  const userName = localStorage.getItem('username'); // ログイン時に保存しておく想定
+
+  if (token && userName && loginLink) {
+    // 認証済み：メニューを差し替え
+    loginLink.textContent = `${userName}でログイン中`;
+    loginLink.href = '/html/user_mypage.html';
+  } else if (loginLink) {
+    // 未ログイン：元のログインリンクに戻す
+    loginLink.textContent = 'ログイン';
+    loginLink.href = '/html/login.html';
+  }
+}
+
+//  商品データ取得
 async function getData() {
   try {
     const res = await fetch('http://localhost:3001/api/allitems');
@@ -91,49 +108,53 @@ function displayItems(category) {
   filteredItems.forEach(item => {
     const imageUrl = `/images/item_${item.item_id}.png`;
 
-    
     localStorage.setItem('item_' + item.item_id, JSON.stringify(item));
 
-    
     const itemHTML = document.createElement('div');
     itemHTML.className = 'item-card mb-3 p-2 border rounded';
+
+   
     itemHTML.innerHTML = `
       <img src="${imageUrl}" alt="${item.item_name}" class="item-image mb-2" style="width:100px;">
       <div><strong>${item.item_name}</strong></div>
       <div>¥${item.item_price}</div>
       <div>在庫: ${item.item_stock}</div>
+      <div class="mt-2"></div>
     `;
+
+    const actionDiv = itemHTML.querySelector('div.mt-2');
+
     if(item.item_stock > 0 ) {
-      itemHTML.innerHTML += `<button class="btn btn-primary btn-sm mt-2 add-to-cart">カートに追加</button>`;
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-primary btn-sm';
+      btn.textContent = 'カートに追加';
+      btn.addEventListener('click', () => {
+        const cartKey = 'cart_' + item.item_id;
+        let count = parseInt(localStorage.getItem(cartKey)) || 0;
+
+        if (count + 1 > item.item_stock) {
+          alert('これ以上追加できません');
+          return;
+        }
+
+        count += 1;
+        localStorage.setItem(cartKey, count);
+        alert('カートに追加しました');
+      });
+      actionDiv.appendChild(btn);
     } else {
-      itemHTML.innerHTML += `<button class="btn btn-secondary btn-sm mt-2" disabled>sold out</button>`;
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-secondary btn-sm';
+      btn.textContent = 'sold out';
+      btn.disabled = true;
+      actionDiv.appendChild(btn);
     }
+
     container.appendChild(itemHTML);
-
-    
-    const button = itemHTML.querySelector('.add-to-cart');
-    button.addEventListener('click', () => {
-      const cartKey = 'cart_' + item.item_id;
-      let count = parseInt(localStorage.getItem(cartKey)) || 0;
-
-      if (item.item_stock <= 0) {
-        alert('在庫がありません');
-        return;
-      }
-
-      if (count + 1 > item.item_stock) {
-        alert('これ以上追加できません');
-        return;
-      }
-
-      count += 1;
-      localStorage.setItem(cartKey, count);
-      alert('カートに追加しました');
-    });
-  });
+});
 }
 
-// カテゴリーフィルター
+//  初期化
 document.addEventListener('DOMContentLoaded', () => {
   const categoryFilters = document.querySelectorAll('.category-filter');
   categoryFilters.forEach(filter => {
@@ -144,8 +165,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+
+
+
+  // ログイン状態確認
+  updateLoginMenu();
+
+  // 商品データ読み込み
   getData();
 });
 </script>
+
 </body>
 </html>

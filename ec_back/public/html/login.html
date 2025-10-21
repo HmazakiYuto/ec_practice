@@ -43,7 +43,7 @@
 
   <div>
     <h1>ログインページ</h1>
-    <form action="/api/login" method="post">
+    <form id="login-form">
       <div>
         <label for="username">ユーザー名:</label>
         <input type="text" id="username" name="username" required>
@@ -76,18 +76,13 @@
   </div>
 
   <script>
-    // --- 新規登録フォームをJSで送信 ---
+    // --- 新規登録 ---
     document.getElementById('register-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-
       const username = document.getElementById('new-username').value;
       const password = document.getElementById('new-password').value;
 
-      const payload = {
-        username: username,
-        password: password,
-        user_type: 'customer'
-      };
+      const payload = { username, password, user_type: 'customer' };
 
       try {
         const res = await fetch('/api/register', {
@@ -101,6 +96,40 @@
           alert('登録成功: ' + data.message);
         } else {
           alert('登録失敗: ' + data.error);
+        }
+      } catch (err) {
+        alert('通信エラー: ' + err);
+      }
+    });
+
+    // --- ログイン ---
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          // JWTをlocalStorageに保存
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('username', data.username);
+          localStorage.setItem('user_id', data.user_id);
+          // user_type によってページ振り分け
+          if (data.user_type === 'admin') {
+            window.location.href = '/html/admin.html';
+          } else {
+            window.location.href = '/html/ec2_practice.html';
+          }
+        } else {
+          alert('ログイン失敗: ' + data.error);
         }
       } catch (err) {
         alert('通信エラー: ' + err);
