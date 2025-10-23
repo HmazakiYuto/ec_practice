@@ -77,16 +77,29 @@ function updateLoginMenu() {
   }
 }
 
-//  商品データ取得
+
+// 商品データ取得
 async function getData() {
   try {
     const res = await fetch('http://localhost:3001/api/allitems');
     allItems = await res.json();
+
+    // カテゴリ順にソート
+    const order = ['野菜', '果物', '肉', '魚', '飲料', 'お菓子', '王'];
+
+    allItems.sort((a, b) => {
+      const aIndex = order.indexOf(a.item_category);
+      const bIndex = order.indexOf(b.item_category);
+     
+      return (aIndex === -1 ? 999 : aIndex) - (bIndex === -1 ? 999 : bIndex);
+    });
+
     displayItems(currentCategory);
   } catch (err) {
     console.error('通信エラー:', err);
   }
 }
+
 
 // アイテム表示
 function displayItems(category) {

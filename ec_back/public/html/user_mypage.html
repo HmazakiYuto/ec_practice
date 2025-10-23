@@ -12,23 +12,71 @@
         <a href="./ec2_practice.html" class="btn btn-link">ホームに戻る</a>
     </div>
 
-    <h1 class="mb-4">注文履歴</h1>
-
+    
     <button id="logout-btn" class="btn btn-danger">ログアウト</button>
+    <button id="order-list">注文履歴</button>
+    <div id="orders-container" class="mt-4"></div>
 
     <script>
         // ログアウトボタンの処理
         document.getElementById('logout-btn').addEventListener('click', () => {
-            // localStorageからトークン削除
             localStorage.removeItem('token');
 
-            // 他にもログイン時に保存したデータを削除したい場合はここでまとめて削除可能
-            // localStorage.removeItem('username');
-            // localStorage.clear();  ← すべて削除したい場合
 
             alert('ログアウトしました');
             window.location.href = '/html/ec2_practice.html';
         });
+
+       document.getElementById('order-list').addEventListener('click', async () => {
+  try {
+    const res = await fetch('/api/get_orders', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + localStorage.getItem('token')
+      }
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      alert('注文データの取得に失敗しました: ' + (errorData.error || res.statusText));
+      return;
+    }
+
+    const orders = await res.json();
+    const container = document.getElementById('orders-container');
+    container.innerHTML = ''; // 表示をリセット
+
+    orders.forEach(order => {
+      const orderDiv = document.createElement('div');
+      orderDiv.className = 'cart mb-2 p-2 border rounded';
+      orderDiv.innerHTML = `
+        <div>
+          <strong>注文日:</strong> ${new Date(order.order_date).toLocaleString()}<br>
+          <strong>合計金額:</strong> ¥${order.total_amount}<br>
+          <strong>購入商品:</strong>
+          <ul id="items-${order.order_id}"></ul>
+        </div>
+      `;
+
+      const itemsList = orderDiv.querySelector(`#items-${order.order_id}`);
+      order.items.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = `${item.item_name}: ¥${item.item_price} × ${item.quantity}`;
+        itemsList.appendChild(li);
+      });
+
+      container.appendChild(orderDiv);
+    });
+
+  } catch (err) {
+    console.error('通信エラー:', err);
+    alert('通信エラーが発生しました');
+  }
+});
+
+
+
     </script>
 </body>
 </html>
