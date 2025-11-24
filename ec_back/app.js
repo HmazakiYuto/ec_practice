@@ -5,15 +5,15 @@ const path = require('path');
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require('./db'); // MySQL接続用
-const { user } = require('./config'); // もし必要な設定あれば
+const { user } = require('./config'); 
 const app = express();
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors());//クロスオリジンアクセス許可
+app.use(express.static(path.join(__dirname, 'public'))); //画像ファイルとかを公開
 
 // MySQL接続 
 db.connect(err => {
@@ -106,7 +106,7 @@ app.get('/api/allitems', (req, res) => {
   });
 });
 
-// 静的ページ（権限による振り分け）
+// 静的ページ（権限による振り分け）urlを直接入力すると権限なしでもアクセスできてしまう。修正必須
 app.get('/admin.html', authenticateToken, (req, res) => {
   if (req.user.user_type !== 'admin') return res.status(403).send('権限なし');
   res.sendFile(path.join(__dirname, 'public', 'html', 'admin.html'));
