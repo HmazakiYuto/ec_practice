@@ -5,7 +5,6 @@ const path = require('path');
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require('./db'); // MySQL接続用
-const { user } = require('./config'); 
 const app = express();
 
 

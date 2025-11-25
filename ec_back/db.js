@@ -1,5 +1,5 @@
 // db.js
-const config = require('./config'); //外部ファイルにパスわーどを
+//const config = require('./config'); //外部ファイルにパスわーどを
 const mysql = require('mysql2');
 
 
